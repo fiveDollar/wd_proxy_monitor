@@ -11,11 +11,11 @@ public class MailConf {
 	private String from = "";
 	private String smtp = "";
 	private String password = "";
-	public void init(){
+	public void init(String filePath){
 		Properties p = new Properties();
 		InputStream in = null;
 		try {
-			in = new FileInputStream("conf/mail.conf");
+			in = new FileInputStream(filePath);
 			p.load(in);
 			this.to = p.getProperty("to");
 			this.copyTo = p.getProperty("copy");
@@ -63,6 +63,10 @@ public class MailConf {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	
+	@Override
+	public String toString() {
+		return "MailConf [to=" + to + ", copyTo=" + copyTo + ", from=" + from
+				+ ", smtp=" + smtp + ", password=" + password + "]";
+	}
 	
 }

@@ -1,26 +1,35 @@
 package com.traffic.shell;
 
-import java.util.Properties;
+import java.util.ArrayList;
 
-import com.traffic.util.PropertiesUtil;
+import com.traffic.mailUtil.Mail;
+import com.traffic.mailUtil.MailConf;
+import com.traffic.server.Server;
+import com.traffic.util.ReadServerFromCnf;
 
 public class GetDf {
-
+	final static String SERVER_LIST_PAHT = "conf/df_monitor_server.properties";
+	final static String SERVER_LIST_KEY = "server_list";
 	public static void main(String[] args) {
-//		Shell shell = new Shell(host, password, user)
-		Properties p = PropertiesUtil.read("conf/df_monitor_server.properties");
-		System.out.println(p.get("server_list"));
+		ArrayList<Server> serverList = ReadServerFromCnf.getServer(SERVER_LIST_PAHT, SERVER_LIST_KEY);
+		for (Server server : serverList) {
+			String result = getDf(server);
+			if(result.split("9[5-9]%").length>1||result.split("100%").length>1){
+				MailConf mc = new MailConf();
+				mc.init("conf/dfmail.conf");
+				Mail.send(mc.getSmtp(), mc.getFrom(), server.getOwner(),server.getIp() + "磁盘即将占满", result, mc.getFrom(), mc.getPassword());
+			}
+		}
+
 	}
 	
-	public String getDf(){
-		Properties p = PropertiesUtil.read("conf/df_monitor_server.properties");
-//		System.out.println(p.get("server_list"));
-		String[] server_list = p.get("server_list").toString().split(",");
-		for (String serverInfo : server_list) {
-			Shell shell = new Shell(serverInfo.split("@")[1].split(":")[0], serverInfo.split("@")[1].split(":")[1], serverInfo.split("@")[0]);
-			
-		}
-		return null;
-		
+	public static String getDf(Server server){
+		Shell shell = new Shell(server.getIp(), server.getPassword(), server.getUser());
+		shell.connect();
+		String result = shell.command("df -h", 1000);
+		shell.disConnect();
+		return result;
 	}
+	
+	
 }
